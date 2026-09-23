@@ -1,4 +1,4 @@
-name: sevda
+name: celin
 
 on:
   schedule:
@@ -10,8 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     env:
-      REPO_ORIGIN: https://github.com/Shabakebehdasht/h-dashboard.git
-      WF_NAME: sevda
+      REPO_ORIGIN: https://github.com/Haylin2/h-dashboard.git
+      WF_NAME: celin
 
     steps:
       - name: 1. Checkout Repository
@@ -110,8 +110,8 @@ jobs:
           cd h-dashboard
 
           # Set git identity for commits
-          git config user.name "Shabakebehdasht"
-          git config user.email "Shabakebehdasht@users.noreply.github.com"
+          git config user.name "Haylin2"
+          git config user.email "Haylin2@users.noreply.github.com"
 
           # Fetch latest origin/beta
           git fetch origin beta
@@ -300,7 +300,7 @@ jobs:
                 && echo '✅ Seed result sent to Telegram' \
                 || echo '⚠️ Seed result failed to send'
             else
-              hermes send --to telegram "sevda online and ready." \
+              hermes send --to telegram "celin online and ready." \
                 && echo '✅ Welcome message sent to Telegram' \
                 || echo '⚠️ Welcome message failed to send'
             fi
@@ -321,16 +321,16 @@ jobs:
             echo "[$i/330] Server is active (SSH + Laravel on port 8000)..."
           done
 
-      - name: 16. Sync hermes state & 9router data back to my-sev
+      - name: 16. Sync hermes state & 9router data back to my-cel
         if: always()
         env:
           GH_TOKEN: ${{ secrets.MY_PAT }}
         run: |
           cd "${GITHUB_WORKSPACE:-.}"
-          git config user.name "Shabakebehdasht"
-          git config user.email "Shabakebehdasht@users.noreply.github.com"
+          git config user.name "Haylin2"
+          git config user.email "Haylin2@users.noreply.github.com"
           # Authenticate with PAT for push
-          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/Shabakebehdasht/my-sev.git"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/Haylin2/my-cel.git"
 
           H=/home/runner/.hermes
           HDEST=hermes
@@ -358,11 +358,11 @@ jobs:
             echo 'ℹ️ No changes to commit'
           else
             git add hermes/ 9router/ 2>/dev/null || true
-            git commit -m "Sync hermes state & 9router data from sevda instance"
+            git commit -m "Sync hermes state & 9router data from celin instance"
             # Pull first in case another run pushed before us
             git pull --rebase origin "${{ github.ref_name }}" || true
             git push origin "${{ github.ref_name }}" || echo '⚠️ Push failed — changes saved locally'
-            echo '✅ Hermes & 9router data synced to my-sev'
+            echo '✅ Hermes & 9router data synced to my-cel'
           fi
 
       - name: 17. Tailscale Logout (cleanup on shutdown)
