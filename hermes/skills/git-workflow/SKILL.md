@@ -112,14 +112,18 @@ Use this when a repository has a working branch and a canonical integration bran
 
    Verify the updated base is reachable from `HEAD` before pushing.
 
-5. **Push and verify the exact current branch.** Do not use a generic `git push` or push normal work to the integration branch:
+5. **Push and verify the exact current branch.** Do not use a generic `git push` or push normal work to the integration branch. Before pushing, fetch the remote and compare the exact current-branch ref; a branch may display a tracking label for the integration branch while its own remote ref has separate history.
 
    ```bash
    working_branch=$(git branch --show-current)
+   git fetch --prune "$fork_remote"
+   git rev-list --left-right --count "HEAD...$fork_remote/$working_branch"
    git push "$fork_remote" "HEAD:refs/heads/$working_branch"
    git ls-remote "$fork_remote" "refs/heads/$base_branch" "refs/heads/$working_branch"
    git status --short --branch
    ```
+
+   If the remote current branch has commits absent locally, stop before force-pushing. Merge that remote ref into the fixed working branch, review the merge, rerun verification, and then push. This preserves remote work while ensuring the push is fast-forward-safe.
 
    Completion requires the working tree to be clean, the current branch to contain the synchronized base, and the remote ref to match the expected commit.
 
