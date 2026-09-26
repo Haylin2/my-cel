@@ -22,6 +22,9 @@ Pitfalls and procedures for everyday git operations that fall outside standard
 - Never assume a branch name — read it from `git branch --show-current`.
 - When a CI job commits to the same branch you are on, fetch and compare before
   concluding your push is stale, and never force-push over the job's commits.
+- If a sync brings in a project instruction file the loader refuses, see the
+  `project-instructions-loading` skill; a merge can reintroduce the character that
+  blocked it, so re-check after every sync.
 - For GitHub Actions workflow YAML itself (step order, per-step `cd`, local
   verification), see the `github-actions-workflows` skill.
 
@@ -130,6 +133,27 @@ Only then run it for real, and re-check `git status` in the real repo afterwards
 
 Use this when a repository has a working branch and a canonical integration branch, but remote names and branch names must be discovered rather than assumed.
 
+0. **Classify uncommitted work before fetching.** A merge carries staged and unstaged
+   changes into the new base, so resolve the dirty tree first. Per dirty path, ask whether
+   the incoming base still tracks it:
+
+   ```bash
+   git status --short
+   git diff --name-only HEAD "$base_ref"     # files the sync actually touches
+   git cat-file -e "$base_ref:<path>" && echo tracked || echo gone
+   ```
+
+   A staged deletion of a file the base still tracks is a tooling artifact, not work. Undo
+   both the staging and the deletion so the merge does not record a deletion nobody intended:
+
+   ```bash
+   git restore --staged <path> && git checkout -- <path>
+   ```
+
+   Keep genuine in-flight edits, and check them against the incoming diff so a merge does not
+   conflict with them. Never `reset --hard` or `git clean` to tidy the tree before a sync you
+   are about to push — that is how uncommitted work is silently destroyed.
+
 1. **Discover before changing anything.** Read `git remote -v`, `git branch --show-current`, and `git status --short --branch`. Classify each remote and the base branch from the repository's instructions and fetched refs; do not infer meanings from names such as `origin` or `upstream`.
 
 2. **Fetch both sides before comparing.** Use the discovered remote and branch variables:
@@ -141,6 +165,19 @@ Use this when a repository has a working branch and a canonical integration bran
    ```
 
    A nonzero left side means the fork integration branch has commits absent upstream. Never force-update it; stop and reconcile explicitly.
+
+   When the clone has no remote for the canonical repo, and the project's rules forbid adding
+   one, fetch by URL instead. It lands in `FETCH_HEAD` and changes no git config:
+
+   ```bash
+   git fetch https://github.com/<owner>/<repo> "$base_branch"    # -> FETCH_HEAD
+   git rev-list --left-right --count "$fork_remote/$base_branch...FETCH_HEAD"
+   ```
+
+   Use `FETCH_HEAD` wherever the steps below say `"$upstream_remote/$base_branch"`, including
+   the base push (`git push "$fork_remote" FETCH_HEAD:refs/heads/$base_branch`) and the
+   ancestry check. A URL fetch is the sanctioned way to sync from a canonical repo whose
+   remote you are not allowed to register.
 
 3. **Fast-forward the fork only when ancestry proves it is safe.** Check, then push the canonical base ref to the fork without changing remotes:
 
