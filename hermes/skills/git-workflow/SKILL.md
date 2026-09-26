@@ -20,6 +20,10 @@ Pitfalls and procedures for everyday git operations that fall outside standard
 - Always check `git status` and `git remote -v` before staging or pushing.
 - Configure per-repo identity before first commit if global config is absent.
 - Never assume a branch name — read it from `git branch --show-current`.
+- When a CI job commits to the same branch you are on, fetch and compare before
+  concluding your push is stale, and never force-push over the job's commits.
+- For GitHub Actions workflow YAML itself (step order, per-step `cd`, local
+  verification), see the `github-actions-workflows` skill.
 
 ## Pitfalls
 
@@ -77,6 +81,50 @@ git config user.name "username"
 ```
 
 Detect from `gh auth status` or set manually.
+
+Mid-rebase this failure can surface as a *different* message — `git rebase
+--continue` complaining about "staged changes in your working tree" — because
+rebase is mid-commit and cannot open an editor to ask for an identity. Read the
+real cause from `git status` (it prints the rebase progress and the pending
+commit) instead of staging things to satisfy the message.
+
+### `git rebase --continue` wedged on its own commit
+
+A rebase that pauses while replaying your own commit can refuse to continue
+repeatedly even with the conflict resolved and identity configured — the todo
+list still lists the commit, `HEAD` never moves, and the message does not
+change. Continuing to poke it wastes the session.
+
+**Fix — abort and replay:**
+
+```bash
+cp <the-file-you-edited> /tmp/saved          # keep your version
+git rebase --abort
+git fetch origin
+git reset --hard origin/<branch>
+git cherry-pick <sha1> <sha2> ...
+diff /tmp/saved <the-file-you-edited>         # prove the replay is intact
+```
+
+Cherry-picking onto the freshly fetched remote head keeps the other party's
+commits and lands yours in the same order, without the rebase state machine.
+
+### Rehearse index-altering snippets on a copy, not the checkout
+
+Any snippet that changes the real index (`git rm --cached`, `git add`, staging
+for a commit) mutates live git state. Running it to "see what happens" leaves
+staged changes behind, and a later `git reset` can hide the real effect (a
+deleted file becomes tracked-again-but-absent: `git status` looks almost clean
+and the deletion is invisible to the next agent).
+
+**Fix — run it against an exported tree first:**
+
+```bash
+git archive HEAD | tar -x -C /tmp/rehearsal
+# run the snippet inside /tmp/rehearsal, then inspect git status there
+```
+
+Only then run it for real, and re-check `git status` in the real repo afterwards.
 
 ## Synchronizing a repository with a fork
 
