@@ -1,1 +1,7 @@
 __pycache__/
+# this repo only stores hermes/ + 9router/ state; the root composer.json,
+# composer.lock and vendor/ were stray `composer require laravel/boost`
+# output from the workflow running in the wrong working directory
+/composer.json
+/composer.lock
+/vendor/
