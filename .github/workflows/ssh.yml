@@ -257,6 +257,10 @@ jobs:
 
           # 4. Install MCP servers + the shadcn/improve skill.
           #    4a. Laravel Boost MCP (php artisan boost:mcp — provided by laravel/boost)
+          #        Must run inside h-dashboard: `composer require` in the workflow's
+          #        working dir (the my-cel workspace) would install the package into
+          #        the wrong project and litter composer.json/vendor/ at its root.
+          cd /home/runner/h-dashboard
           composer require laravel/boost --no-interaction 2>&1 | tail -3 || true
           if [ -f /home/runner/h-dashboard/artisan ]; then
             php artisan boost:update 2>/dev/null || true
