@@ -89,6 +89,8 @@ queues text onto that child's next tool result.
 See `references/domain-recon-techniques.md` for the recon greps that make these
 audits cheap, the live-schema checks that turn a structural claim into a number,
 and the output-truncation rule that keeps a wide sweep readable. See
+`references/github-discussions.md` for the Discussions API and for the cheap
+repo-state reads that settle a proposal question before you reply to it. See
 `references/small-cell-privacy.md` when the feature shades polygons with health
 case counts.
 
@@ -133,6 +135,66 @@ re-derived cheaply, either verify it or soften the claim.
 Close the report by asking which findings become plans, offering a default
 selection, and naming the dependency order. Then stop — do not write plans
 nobody asked for.
+
+## Reviewing Someone Else's Proposal
+
+When the task is "reply to these open threads / discussions with your view" —
+rather than "find the bugs yourself" — the value you add is entirely in what
+you **verified** versus what you **asserted**. A thread full of opinions is
+worth nothing; a thread where every claim carries a file:line, an index name, or
+a live query result is worth acting on.
+
+**Procedure:**
+
+1. **Read every body you plan to respond to** before writing a word. Titles
+   misstate scope routinely.
+2. **Extract each falsifiable claim.** "31 PRs merged", "beta is in sync with
+   main", "a status gate will keep beta stable", "the persons table has a phone
+   field" — each is checkable, and each is a chance to be the person who catches
+   the error.
+3. **Verify the cheap mechanical claims in one batched script**, not one
+   `gh`/SQL call per claim. A dozen single-purpose round trips cost a dozen
+   context switches for facts that are all API reads.
+4. **Separate what you found into: a correction, a confirmation, and an
+   unknown.** A reply that only corrects reads as hostile; one that only agrees
+   adds nothing. Confirmation is worth stating explicitly — "the rest of your
+   pattern matches `UnitsExport` exactly" tells the author which half of their
+   proposal is safe to build.
+5. **Say which findings are certain and which are judgement.** "This column
+   does not exist" is verifiable. "This will get slow" is a prediction. Mark the
+   difference or the prediction inherits the credibility of the fact.
+6. **Offer to do the mechanical part** rather than asking to be assigned it.
+   Naming the exact next action you could take is more useful than a generic
+   offer to help.
+
+**Corrections must be about the work, not the writer.** "The count is 22 with
+base=beta, not 31" — never "your summary is wrong." The author's number was
+probably right for a different filter, and saying so is both kinder and more
+accurate.
+
+**Verify before replying, even when the thread is urgent.** Three replies in
+this session found factual errors in work that had already been merged. The
+cost of one extra `gh api` call is nothing next to publishing a correction
+that is itself wrong.
+
+When the user waives approval for a multi-thread sweep, that waiver covers
+*posting*, never *verifying*. Draft, check, post, then report each URL — and
+write each reply to its own file so one mangled draft does not block the rest.
+
+**Draft text must be re-read before it goes out.** Long generated bodies
+occasionally come back with corrupted characters and truncated sentences, and
+the corruption reads as fluent until you look closely. Scanning the rendered
+file catches it in seconds; posting it does not. When a draft looks mangled,
+rewrite it whole rather than patching around the damaged spans — a partially
+repaired draft is harder to review than a fresh one.
+
+**On Telegram, verify long output the same way.** A length figure is not proof
+that a body posted intact. A short structural read-back (title, category, body
+size, comment count) is the check.
+
+See `references/github-discussions.md` for the Discussion API mechanics, and the
+`laravel-livewire` skill's `references/aggregate-query-pitfalls.md` for the
+query-level verification probes.
 
 ## Plans Directory Structure
 

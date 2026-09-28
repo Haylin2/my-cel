@@ -39,6 +39,11 @@ PHP code changes, test writing, and API resource transformers.
    and PHPStan reports new errors. Run `vendor/bin/phpstan analyse
    --generate-baseline` after every fix round, then verify with
    `composer phpstan`.
+7. **Never hand-interpolate a scope id list into raw SQL.** A permission-derived
+   id list can be empty, and `implode(',', $ids)` then yields `IN ()` — a
+   PostgreSQL syntax error, so the page 500s instead of showing zeroes. Eloquent
+   `whereIn` compiles empty arrays to `0 = 1` and is safe; hand-built `IN (...)`
+   is not. See `references/aggregate-query-pitfalls.md` Rule 1.
 
 ## Pitfalls
 
@@ -90,6 +95,34 @@ PHP code changes, test writing, and API resource transformers.
       $model->update(['user_id' => Auth::id()]);
   }
   ```
+
+## Dashboards & Report Endpoints
+
+Before changing any stat card, chart, or report aggregation, read
+`references/aggregate-query-pitfalls.md`. Standing rules:
+
+- **A "last N days" chart needs a date predicate before the group-by.**
+  `orderBy('day')->limit(N)` after a `groupBy` returns the N *oldest* groups —
+  it looks right until the table outgrows the window. Filter on the date column
+  so the query can use its index.
+- **Empty buckets are gaps, not zeros.** `groupBy(date(col))` only returns days
+  that have rows, so a day with no activity renders as a missing bar. Fill the
+  window with `generate_series` + `LEFT JOIN`, or read a daily rollup the
+  scheduler maintains — and say which, because a rollup always lags by its own
+  generation interval.
+- **Verify index coverage instead of assuming it.** An `AVG(CASE WHEN ...)` over
+  a column with no index is invisible at dev row counts and a full scan in
+  production. Query `pg_indexes` for the column before calling a query fast.
+- **One scan per stat card.** Three `->count()` calls for total/open/closed is
+  three scans; `COUNT(*) FILTER (WHERE ...)` (Postgres) or `SUM(CASE WHEN ...)`
+  (portable, also works on the SQLite test driver) is one.
+- **Prove query behaviour by running it.** Read the PHP, then run the real SQL
+  against the dev database with `EXPLAIN (ANALYZE, BUFFERS)` and check
+  `information_schema.columns` for columns you assumed exist. A conclusion
+  drawn from reading code is a guess; a conclusion drawn from the returned rows
+  is evidence.
+- **Keep the UI chart and the report API on the same window.** Two definitions
+  of one metric means nobody can tell which number is right when they disagree.
 
 ## Map / GIS Pages (Leaflet + Livewire)
 
