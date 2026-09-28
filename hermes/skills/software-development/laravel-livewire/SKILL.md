@@ -91,6 +91,42 @@ PHP code changes, test writing, and API resource transformers.
   }
   ```
 
+## Map / GIS Pages (Leaflet + Livewire)
+
+Maps are where Livewire's DOM diffing and a JS singleton library collide. Read
+`references/gis-map-pitfalls.md` before adding or refactoring any map page.
+
+Standing rules:
+
+- **One map instance, owned by one shared component.** A page that embeds a map
+  child component must receive that instance through a documented contract
+  (`Livewire.on(...)` events or a single exported accessor), never by polling
+  for a global. If you inherit a `window.map` + `setInterval`-until-ready
+  pattern, count the defensive workarounds already in the file — a
+  `setTimeout(invalidateSize)`, a container-`_leaflet_id` re-init branch, and a
+  loop that manually `delete`s stale globals are each a bug that already
+  shipped. Add no more.
+- **A global JS library loads exactly once, from the shared layout.** If a page
+  also pulls it from a CDN, two copies exist and `instanceof`/identity checks
+  and cross-module references silently break. Check the layout before adding a
+  `<script>` to a page.
+- **Every CDN origin must be in the CSP before you leave report-only mode.**
+  `connect-src 'self'` plus a CDN-loaded library or tile host is a page that
+  works today and breaks on enforcement. Grep the CSP middleware for the origins
+  the map actually needs.
+- **A per-page-load Sanctum token minted into a JS variable is a pattern, not
+  a convenience.** It churns rows in `personal_access_tokens`, widens the blast
+  radius of whatever ability it grants, and lands the plaintext in script scope
+  on every navigation. Mint one long-lived token, or proxy the data through
+  session-authenticated Livewire instead of a Bearer fetch.
+- **Bbox-driven refetch needs a sequence guard or AbortController.** Firing a
+  request on every map `moveend` without cancellation lets an earlier, slower
+  response land after a later one and repaint stale data. Debouncing is not
+  enough — it only reduces the count, not the race.
+- **Unscoped `ST_*` in an accessor is an N+1 waiting to happen.** An accessor
+  that runs raw SQL to compute GeoJSON is fine only if every caller eager-loads
+  the underlying attribute; check loop callers before trusting it.
+
 ## Merge Conflicts in Auto-Generated Files
 
 When a PR has merge conflicts with `upstream/beta` in auto-generated files

@@ -47,6 +47,51 @@ Each subagent prompt must include:
 
 Subagent output schema per finding: `{id, category, finding, evidence, impact, effort, risk, confidence}`.
 
+## Direction Audits (`improve next` / future feature)
+
+When the maintainer asks what to BUILD NEXT rather than what is broken, do NOT
+fan out by the nine bug categories. Fan out by DOMAIN, one consultant per
+surface the feature would touch. Domain-scoped prompts produce far better
+reports than category-scoped ones, because each consultant can reason about
+one architecture end to end.
+
+Typical four-way split for a new feature request in a Laravel app:
+1. **Data model** — schema options for the new entities, indexes, migrations, time grain
+2. **Backend data path** — controller/endpoint shape, query strategy, caching, payload size
+3. **Frontend architecture** — existing page duplication, shared shell/component target, migration path
+4. **Access control + privacy + testability** — permission/ability model, row scoping, disclosure risk, minimum test set
+
+Do NOT write plans for a direction audit until the maintainer picks from the
+presented options. Direction findings are options to weigh, not a ranked bug
+table. `improve` already separates them; keep that separation in the write-up.
+
+### Steer In-Flight Audits When the Maintainer Narrows Scope
+
+A maintainer usually answers the first scope question *after* the fan-out is
+already running. That is fine — the fan-out is background work and the
+conversation continues. `delegate_task(action='steer', subagent_id=..., message=...)`
+queues text onto that child's next tool result.
+
+- **A steer aimed at a child that already finished is silently dropped** — the
+  completion entry reports it as a `missed_steer`. When the maintainer's answer
+  invalidates that child's recommendation, re-dispatch it rather than folding
+  its now-stale analysis into the report.
+- **Name what to DROP, not only what to add.** "No mobile, no importer" has to
+  be an instruction to remove that design work; a child that already scoped it
+  keeps designing it if you merely stop mentioning it.
+- **Restate the consequence, not just the constraint.** "Rows are recorded at
+  leaf units and rolled up the org tree" does not reach a child that planned a
+  per-row store — say that the read path is an aggregate over descendants and
+  that the existing recursive tree is the mechanism, not something to reinvent.
+- `action='steer'` on a subagent that is no longer live errors out. Check
+  `action='list'` for the live set before steering a batch.
+
+See `references/domain-recon-techniques.md` for the recon greps that make these
+audits cheap, the live-schema checks that turn a structural claim into a number,
+and the output-truncation rule that keeps a wide sweep readable. See
+`references/small-cell-privacy.md` when the feature shades polygons with health
+case counts.
+
 ## Vetting Subagent Reports
 
 Subagents over-report. Three failure classes to check:
@@ -56,6 +101,38 @@ Subagents over-report. Three failure classes to check:
 3. **Duplicates** across subagents (same root cause, different symptoms)
 
 Always open the cited code yourself before including a finding in the vetted table. Downgrade or reject accordingly.
+
+**Verify a claim that changes a security or permissions decision yourself, every
+time — do not delegate it.** A child asserting "this token is wildcard-scoped" is
+a claim about the blast radius of a credential leak; it is cheap to confirm (read
+the framework's `createToken` signature and check the default argument) and
+expensive to get wrong. Same for anything that would become a new permission
+string, a new ability, or a suppression threshold.
+
+**Verify the cheap mechanical claims in a batch, not one at a time.** A dozen
+single-purpose `grep`s each cost a round trip; grouping them into one script with
+a labelled output per check costs one. Every finding you intend to keep gets a
+verification pass, and a claim that fails it goes in the report marked as
+unverified or is dropped.
+
+**Report what the audit did not cover.** A direction audit that scoped itself to
+four domains must say which categories it skipped, so the maintainer knows
+whether a clean result means "clean" or "not looked at".
+
+## Presenting a Direction Audit
+
+Findings table first, then the architecture options as a separate section — the
+maintainer weighs options, they do not rank them against bugs. Keep the two
+visually distinct.
+
+Every number in the report should be one you obtained, not one a child asserted:
+row counts from a live query, index lists from `pg_indexes`, payload sizes from
+`octet_length`, plan shapes from `EXPLAIN`. When a child's number cannot be
+re-derived cheaply, either verify it or soften the claim.
+
+Close the report by asking which findings become plans, offering a default
+selection, and naming the dependency order. Then stop — do not write plans
+nobody asked for.
 
 ## Plans Directory Structure
 
