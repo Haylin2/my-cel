@@ -91,6 +91,63 @@ per-day and per-unit breakdowns in one report endpoint — and keep the UI chart
 and the report API on the *same* window, or you have two definitions of one
 metric and no way to tell which is right.
 
+## Rule 7 — a window helper that keeps only the WIDTH cannot honour a RANGE
+
+The trap appears when a series/window factory is built for "the last N days"
+and a page later needs a user-picked from/to range:
+
+```php
+public static function between(Carbon $from, Carbon $to): self
+{
+    $days = $from->diffInDays($to) + 1;
+    return new self($days);          // only the width survives
+}
+
+public function window(): array
+{
+    $to = now()->startOfDay();       // always re-anchored to today
+    return [$to->copy()->subDays($this->days - 1)->toDateString(), $to->toDateString()];
+}
+```
+
+`between()` now returns exactly the same series as `lastDays($days)`. Every
+row inside the range the user picked is charted as zero, and the chart renders
+a full window of zeros — a plausible-looking empty report, not an error. The
+dashboard path (last N days) stays correct, which is why this survives review:
+only the date-picker pages break.
+
+Keep the bounds:
+
+```php
+private readonly ?array $explicitBounds;   // array{0: Carbon, 1: Carbon}|null
+
+public static function between(Carbon $from, Carbon $to): self
+{
+    $fromDay = $from->copy()->startOfDay();
+    $toDay   = $to->copy()->startOfDay();
+
+    return new self(max(1, (int) $fromDay->diffInDays($toDay) + 1), [$fromDay, $toDay]);
+}
+
+public function window(): array
+{
+    if ($this->explicitBounds !== null) {
+        return [$this->explicitBounds[0]->toDateString(), $this->explicitBounds[1]->toDateString()];
+    }
+
+    $to = now()->startOfDay();
+
+    return [$to->copy()->subDays($this->days - 1)->toDateString(), $to->toDateString()];
+}
+```
+
+**Prove it with a range in the past.** Assert the returned bounds, then assert
+that a row placed inside the chosen range is non-zero in the output — the
+bounds assertion alone still passes for a helper that returns the right dates
+but joins against the wrong window. Existing tests that only pick ranges ending
+at (or one day past) `now()` cannot distinguish the two implementations; that is
+the entire blind spot.
+
 ## Procedure — check a claim about a query before you assert it
 
 Never conclude a query is fast, correct, or wrong from reading its PHP. Run it.

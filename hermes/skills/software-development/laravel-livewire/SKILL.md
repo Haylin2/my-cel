@@ -123,6 +123,11 @@ Before changing any stat card, chart, or report aggregation, read
   is evidence.
 - **Keep the UI chart and the report API on the same window.** Two definitions
   of one metric means nobody can tell which number is right when they disagree.
+- **A window helper must keep the range, not just its width.** A factory that
+  stores only `$days` and recomputes "now minus N" in the accessor cannot honour
+  an explicit from/to range — it silently charts the most recent N days instead,
+  so a user who picks last month sees this month. Store the bounds and return
+  them. Covered in `references/aggregate-query-pitfalls.md` Rule 7.
 
 ## Map / GIS Pages (Leaflet + Livewire)
 
@@ -183,3 +188,24 @@ The regenerate step produces the correct baseline for the current code state.
 
 See `references/testing-pitfalls.md` for the full decision table on
 assertion patterns, factory creation, and E2E test structure.
+
+## Reviewing Someone Else's Commits
+
+When asked to review a range of commits you did not write (a batch on another
+branch, a discussion thread, "what do you think about the last day of work"),
+read `references/reviewing-others-commits.md` first.
+
+Standing rules:
+
+- **Run their suite on their commit before claiming a test gap.** Green tests
+  that never exercise a path are the finding; a red suite is a different one.
+- **Tests that only use inputs adjacent to `now` cannot catch a hardcoded
+  "now".** Assert at least one case that is far in the past, or the assertion
+  passes for the wrong reason.
+- **Never verify in the user's working tree.** Use a detached worktree; copy
+  `vendor/` (a symlink re-resolves the `App\` namespace to the original repo
+  and silently ignores your edits) and `public/build` (a missing manifest fails
+  every layout-rendering test and mimics a regression).
+- **Verify each claim you publish by executing it, and correct disproved ones
+  in the open.** A retracted finding belongs in the review as a correction, not
+  a silent deletion.
