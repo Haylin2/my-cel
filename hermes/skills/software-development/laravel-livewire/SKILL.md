@@ -132,7 +132,9 @@ Before changing any stat card, chart, or report aggregation, read
 ## Map / GIS Pages (Leaflet + Livewire)
 
 Maps are where Livewire's DOM diffing and a JS singleton library collide. Read
-`references/gis-map-pitfalls.md` before adding or refactoring any map page.
+`references/gis-map-pitfalls.md` before adding or refactoring any map page, and
+`references/browser-repro-harness.md` before reproducing a map bug in the
+browser (Livewire form auth, SPA-navigation triggers, discriminating assertions).
 
 Standing rules:
 
@@ -144,6 +146,39 @@ Standing rules:
   `setTimeout(invalidateSize)`, a container-`_leaflet_id` re-init branch, and a
   loop that manually `delete`s stale globals are each a bug that already
   shipped. Add no more.
+- **Any "ready" gate on a global must also assert container identity.**
+  `if (window.map && …)` passes against the *previous* page's instance, whose
+  container is already detached — so the page binds layers to a map that is
+  about to be replaced and renders nothing, with no error. Require
+  `window.map.getContainer() === document.getElementById('map') &&
+  document.body.contains(el)`. Existence is not readiness.
+- **"Works on direct load, dead from the menu" is a global-singleton bug, not a
+  data bug.** Reproduce both entry paths before reading any query code; a page
+  whose output is correct standalone and empty after SPA navigation has an
+  ordering or ownership defect, and the PHP side is exonerated.
+- **`@script` runs once per component *instance*, not per render.** Two
+  components that both `@script` against the same global run in mount order, so
+  whichever resolves first wins and the loser binds to a stale object. Order is
+  not guaranteed by nesting depth — verify it from a trace, never assume.
+  See `references/gis-map-pitfalls.md`.
+- **An identity guard mitigates a global-singleton bug; only explicit ownership
+  resolves it.** Fixing every readiness gate still leaves pages racing over
+  `window`. Moving the instance into an owner with a real lifecycle (`init()`
+  builds, `destroy()` releases) removes the race instead of detecting it. Before
+  designing that, **spike the lifecycle hook** — inject `x-data` with `init`/
+  `destroy` console logs and click through one SPA hop to confirm teardown
+  actually fires and in which order. That ordering is the design's foundation, and
+  a few minutes of checking beats a wrong multi-file refactor.
+  See `references/spa-lifecycle-refactor.md`.
+- **Grep both `window.<global>` and `L.map(` before scoping a map refactor.** The
+  first finds pages consuming the shared instance; the second finds pages owning
+  their own, which never had the bug. A page whose globals are read by an E2E
+  spec is a public contract — leave it, and name the exclusion in the plan so the
+  scope is reviewable.
+- **A green E2E suite proves nothing about an SPA-navigation bug if every spec
+  uses `page.goto()`.** `goto` is a full reload, which is the entry path that
+  works. Add a spec that clicks a real `wire:navigate` link and asserts rendered
+  output, or the regression returns unnoticed.
 - **A global JS library loads exactly once, from the shared layout.** If a page
   also pulls it from a CDN, two copies exist and `instanceof`/identity checks
   and cross-module references silently break. Check the layout before adding a

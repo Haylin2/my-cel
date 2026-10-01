@@ -196,6 +196,51 @@ See `references/github-discussions.md` for the Discussion API mechanics, and the
 `laravel-livewire` skill's `references/aggregate-query-pitfalls.md` for the
 query-level verification probes.
 
+## Writing an Execution Plan From a Debugged Bug
+
+A distinct class from an audit-driven plan: the root cause is already **verified**
+by a working repro, so the plan's job is to transfer that confidence to an
+executor who was not present. The user asking "write the full plan first, then we
+start" wants the reasoning auditable, not more debugging.
+
+**Follow the repo's own existing plan files.** `ls plans/` first — match the
+house format (header block with commit stamp, quoted context, phase table,
+per-phase done-criteria). A plan that invents its own structure is harder to
+review than one that looks like its neighbours.
+
+**Carry evidence, not conclusions.** Quote the measured reproduction ratio, the
+console trace that named the loser, and the identity check that confirmed it.
+"The map is racy" is unfalsifiable; "0/6 via menu navigation vs 783 on direct
+load, `DESTROY` logged before `INIT`" is a fact the executor can re-check.
+
+**Verify every `file:line` in the plan before committing it.** Batch the checks
+into one script with labelled output. Off-by-one line numbers in a plan send the
+executor to the wrong line and cost more than the batch costs to produce. If a
+claim fails, fix it in the file rather than hoping nobody looks.
+
+**Separate the mechanism spike from the code spike.** A `console.log` injected to
+read an execution order is instrumentation and must be reverted; the reading is
+what belongs in the plan. State the result as a reusable fact, never ship the
+temporary edit.
+
+**Phase the test before the fix.** A refactor plan whose regression spec lands in
+the same phase as the implementation cannot prove the spec has teeth. Make
+"it must fail against current code, or STOP and report" an explicit done-criterion.
+
+**Write the escape-hatch table.** Multi-file refactors fail in ways the happy path
+never anticipated. Give the executor named STOP conditions (this test went green,
+so the repro was wrong; this out-of-scope file turns out to be affected; this
+baseline gained an entry) so it reports instead of improvising.
+
+**Name the exclusions and their reason.** "6 files, 2 untouched because they own
+their own map and are pinned by E2E assertions" is reviewable. Quietly widening
+scope is how a plan loses the reader's trust.
+
+**Verify plan claims about the build, not just the code.** Confirm the baseline is
+green before the first phase, and confirm any build step the plan introduces
+still passes — a broken build discovered mid-execution invalidates the phases
+after it.
+
 ## Plans Directory Structure
 
 ```

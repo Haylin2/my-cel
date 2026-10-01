@@ -31,6 +31,73 @@ Why it breaks:
 Symptom-free fix: a map child component owns the instance, exposes it once, and
 parents react to an explicit ready event.
 
+### Minimal safe gate
+
+Verified fix for the third case below (global exists, container stale) — keep the
+poll, make its condition identity-based:
+
+```js
+function waitForMap(callback) {
+    var tries = 0;
+    function check() {
+        var el = document.getElementById('map');
+        if (window.map && typeof window.map.getSize === 'function' &&
+            window.map.getContainer() === el && document.body.contains(el)) {
+            callback();
+        } else if (++tries > 50) {
+            console.error('Map not ready within 10s');   // never omit this
+        } else {
+            setTimeout(check, 200);
+        }
+    }
+    check();
+}
+```
+
+`document.body.contains(el)` matters as much as the equality test: it rejects a
+container that matches by id but is orphaned. Keep the give-up log — a readiness
+gate that fails silently is indistinguishable from a bug that never fires.
+
+## Diagnosing "works direct, dead from the menu"
+
+This is the diagnostic path for the SPA case above. The failure is a **mount
+order race**, and reading the PHP will not reveal it.
+
+1. **Reproduce both entry paths separately**, then measure the rate. Navigate
+   from every sibling page that also embeds the map child, not just from a
+   neutral page — a non-map origin may pass while every map→map hop fails. A
+   single run proves nothing; report the fail ratio over 5+ attempts, because
+   instrumenting can turn a deterministic failure green by shifting timings.
+2. **Tag the outgoing instance before navigating** so stale versus fresh is
+   decidable afterwards: `window.__oldMap = window.map;
+   window.__oldContainer = window.map.getContainer();`
+3. **Hook `console` AFTER the initial page load**, never before — a hook
+   installed pre-load is wiped by the navigation you are trying to observe.
+4. **Log at four boundaries**, which names the loser deterministically:
+   gate registered → gate resolved → consumer callback entered → producer
+   constructed the instance. Read the emitted order; do not infer it from
+   template nesting.
+5. **Confirm with identity, not presence**:
+   `window.map.getContainer() === document.getElementById('map')`,
+   `document.body.contains(window.__oldContainer)`,
+   `window.__oldMap === window.map`.
+6. **Fix, then re-run every hop plus a direct load** — the direct-load case is
+   the regression guard, since the naive fix can break the path that used to
+   work.
+
+Pitfall: trapping the globals themselves with
+`Object.defineProperty(window, 'markersLayer', {get,set})` to record assignment
+order looks like the cleanest trace and **perturbs the race it is measuring** —
+it turned a 100%-failing reproduction green. Prefer `console.log` at the four
+boundaries, which is cheap enough not to reorder the queue. If a trap is
+unavoidable, treat a green result as inconclusive, not as a fix.
+
+The bug generalises across every page reusing the helper — fix all of them in
+one pass or the next hop reintroduces it. A correct surface-level patch is still
+worth landing first, but report the sibling count and the deeper architectural
+fix (per-page Alpine store or scoped state object) rather than presenting the
+guard as the resolution.
+
 ## Manual global teardown
 
 The tell that teardown is being hand-rolled:
