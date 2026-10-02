@@ -224,14 +224,14 @@
     "created_by": null,
     "last_patched_at": null,
     "last_reused_patch_generation": 0,
-    "last_used_at": "2026-09-30T21:24:14.263482+00:00",
-    "last_viewed_at": "2026-09-30T21:24:14.261041+00:00",
+    "last_used_at": "2026-10-02T13:11:00.296920+00:00",
+    "last_viewed_at": "2026-10-02T13:11:00.295291+00:00",
     "patch_count": 0,
     "patch_generation": 0,
     "pinned": false,
     "state": "active",
-    "use_count": 5,
-    "view_count": 5
+    "use_count": 6,
+    "view_count": 6
   },
   "spike": {
     "archived_at": null,

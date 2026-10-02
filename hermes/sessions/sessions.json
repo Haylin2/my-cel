@@ -2,9 +2,9 @@
   "_README": "LEGACY MIRROR of the gateway routing index (the primary copy lives in the gateway_routing table in ~/.hermes/state.db). Maps messaging session keys (agent:main:<platform>:...) to active session IDs. This is NOT the session list. ALL sessions (CLI, TUI, and gateway) live in ~/.hermes/state.db and are shown by `hermes sessions list` and `/sessions`. Disable this file with `gateway.write_sessions_json: false` in config.yaml.",
   "agent:main:telegram:dm:100651143": {
     "session_key": "agent:main:telegram:dm:100651143",
-    "session_id": "20261001_144450_d8cf1cdf",
-    "created_at": "2026-10-01T14:44:50.331559",
-    "updated_at": "2026-10-01T15:33:46.298334",
+    "session_id": "20261002_131056_15d83878",
+    "created_at": "2026-10-02T13:10:56.132019",
+    "updated_at": "2026-10-02T13:10:56.139939",
     "display_name": "M A",
     "platform": "telegram",
     "chat_type": "dm",
@@ -14,7 +14,7 @@
     "cache_read_tokens": 0,
     "cache_write_tokens": 0,
     "total_tokens": 0,
-    "last_prompt_tokens": 134905,
+    "last_prompt_tokens": 0,
     "estimated_cost_usd": 0.0,
     "cost_status": "unknown",
     "expiry_finalized": false,
@@ -22,8 +22,8 @@
     "resume_pending": false,
     "resume_reason": null,
     "last_resume_marked_at": null,
-    "active_turn_token": null,
-    "active_turn_started_at": null,
+    "active_turn_token": "cd6849baef5a4931af694929be5a212e",
+    "active_turn_started_at": "2026-10-02T13:10:56.139902+00:00",
     "is_fresh_reset": false,
     "was_auto_reset": false,
     "auto_reset_reason": null,
@@ -46,14 +46,14 @@
       "user_name": "M A",
       "thread_id": null,
       "chat_topic": null,
-      "message_id": "2269"
+      "message_id": "2727"
     }
   },
   "agent:main:telegram:group:-1004376120571:100651143": {
     "session_key": "agent:main:telegram:group:-1004376120571:100651143",
-    "session_id": "20261002_044122_6ff5ea00",
-    "created_at": "2026-10-02T04:41:22.569923",
-    "updated_at": "2026-10-02T04:41:22.569923",
+    "session_id": "20261002_134226_8ad8c7dd",
+    "created_at": "2026-10-02T13:42:26.483551",
+    "updated_at": "2026-10-02T13:42:26.483551",
     "display_name": "گروه تیم",
     "platform": "telegram",
     "chat_type": "group",
@@ -87,7 +87,7 @@
       "user_name": "M A",
       "thread_id": null,
       "chat_topic": null,
-      "message_id": "1995"
+      "message_id": "2012"
     }
   }
 }
