@@ -193,14 +193,14 @@
     "first_seen_at": null,
     "last_patched_at": "2026-09-26T17:18:03.066509+00:00",
     "last_reused_patch_generation": 5,
-    "last_used_at": "2026-10-03T03:51:44.669890+00:00",
-    "last_viewed_at": "2026-10-03T03:51:44.668649+00:00",
+    "last_used_at": "2026-10-03T20:40:20.486500+00:00",
+    "last_viewed_at": "2026-10-03T20:40:20.485249+00:00",
     "patch_count": 5,
     "patch_generation": 5,
     "pinned": false,
     "state": "active",
-    "use_count": 4,
-    "view_count": 4
+    "use_count": 5,
+    "view_count": 5
   },
   "read-the-damn-docs": {
     "archived_at": null,
