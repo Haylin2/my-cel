@@ -115,14 +115,14 @@
     "created_by": null,
     "last_patched_at": null,
     "last_reused_patch_generation": 0,
-    "last_used_at": "2026-09-24T06:03:22.779946+00:00",
-    "last_viewed_at": "2026-09-24T06:03:22.778531+00:00",
+    "last_used_at": "2026-10-04T18:55:18.507458+00:00",
+    "last_viewed_at": "2026-10-04T18:55:18.506573+00:00",
     "patch_count": 0,
     "patch_generation": 0,
     "pinned": false,
     "state": "active",
-    "use_count": 19,
-    "view_count": 19
+    "use_count": 20,
+    "view_count": 20
   },
   "hermes-agent-skill-authoring": {
     "archived_at": null,
@@ -138,6 +138,22 @@
     "state": "active",
     "use_count": 5,
     "view_count": 5
+  },
+  "hermes-plugin-management": {
+    "archived_at": null,
+    "created_at": "2026-10-04T19:00:06.677955+00:00",
+    "created_by": "agent",
+    "first_seen_at": null,
+    "last_patched_at": "2026-10-04T19:00:21.648399+00:00",
+    "last_reused_patch_generation": 0,
+    "last_used_at": "2026-10-04T19:00:12.997713+00:00",
+    "last_viewed_at": "2026-10-04T19:00:12.996480+00:00",
+    "patch_count": 2,
+    "patch_generation": 2,
+    "pinned": false,
+    "state": "active",
+    "use_count": 1,
+    "view_count": 1
   },
   "improve": {
     "archived_at": null,
@@ -209,14 +225,14 @@
     "first_seen_at": null,
     "last_patched_at": null,
     "last_reused_patch_generation": 0,
-    "last_used_at": "2026-09-28T06:00:33.911238+00:00",
-    "last_viewed_at": "2026-09-28T06:00:33.910203+00:00",
+    "last_used_at": "2026-10-04T18:02:38.301816+00:00",
+    "last_viewed_at": "2026-10-04T18:02:38.300786+00:00",
     "patch_count": 0,
     "patch_generation": 0,
     "pinned": false,
     "state": "active",
-    "use_count": 7,
-    "view_count": 7
+    "use_count": 8,
+    "view_count": 8
   },
   "requesting-code-review": {
     "archived_at": null,
@@ -258,6 +274,22 @@
     "last_reused_patch_generation": 0,
     "last_used_at": "2026-09-28T17:27:34.471240+00:00",
     "last_viewed_at": "2026-09-28T17:27:34.470157+00:00",
+    "patch_count": 0,
+    "patch_generation": 0,
+    "pinned": false,
+    "state": "active",
+    "use_count": 1,
+    "view_count": 1
+  },
+  "superpowers:using-superpowers": {
+    "archived_at": null,
+    "created_at": "2026-10-04T18:58:02.195673+00:00",
+    "created_by": null,
+    "first_seen_at": null,
+    "last_patched_at": null,
+    "last_reused_patch_generation": 0,
+    "last_used_at": "2026-10-04T18:58:02.196540+00:00",
+    "last_viewed_at": "2026-10-04T18:58:02.195686+00:00",
     "patch_count": 0,
     "patch_generation": 0,
     "pinned": false,

@@ -1,6 +1,6 @@
 For h-dashboard PRs: user says 'pr' → create PR from current branch to upstream/beta (asgarimehdi/h-dashboard). All changes commit+push to current branch.
 §
-Every new session: default cwd is /home/runner/h-dashboard, and always use CodeGraph (`codegraph sync` first; codegraph_explore for code Q&A) + superpowers skills + read-the-damn-docs (web_search official docs) before acting; shadcn/improve for h-dashboard audits only on request.
+Every new session: cd /home/runner/h-dashboard; use CodeGraph (`codegraph sync` first; codegraph_explore for Q&A) + superpowers plugin skills (namespaced: skill_view('superpowers:systematic-debugging')) + read-the-damn-docs before acting; shadcn/improve for h-dashboard audits only on request.
 §
 Boost MCP occasionally dies on first stdio call ("lost its stdio subprocess") — just call it again. CLI fallback always works: php scripts/boost_tool.php <tool> '<json>'.
 §

@@ -1,0 +1,19 @@
+{
+  "homeassistant": {
+    "catalog": {
+      "name": "homeassistant",
+      "pin": "ba30cb0cf86c52bdb5cde98974bc062e97966529",
+      "repo": "https://github.com/NousResearch/hermes-homeassistant",
+      "sha": "ba30cb0cf86c52bdb5cde98974bc062e97966529",
+      "tier": "official"
+    },
+    "pinned": true,
+    "revision": "ba30cb0cf86c52bdb5cde98974bc062e97966529",
+    "source": "https://github.com/NousResearch/hermes-homeassistant"
+  },
+  "superpowers": {
+    "pinned": false,
+    "revision": "8ca22dba9a94f28898bbce59f2537ff4d87c747d",
+    "source": "https://github.com/obra/superpowers"
+  }
+}
