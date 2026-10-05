@@ -1,19 +1,22 @@
 name: celin
 
 on:
-  schedule:
-    - cron: '0 */6 * * *'
   workflow_dispatch:
+  push:
+    branches:
+      - celin
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 340
     env:
       REPO_ORIGIN: https://github.com/Haylin2/h-dashboard.git
       WF_NAME: celin
 
     steps:
+      - name: Wait 10 minutes
+        run: sleep 600
       - name: 1. Checkout Repository
         uses: actions/checkout@v6
         with:
@@ -251,6 +254,10 @@ jobs:
             echo "TELEGRAM_ALLOWED_USERS=${TELEGRAM_ALLOWED_USERS}"
             echo "TELEGRAM_HOME_CHANNEL=${TELEGRAM_ALLOWED_USERS}"
             echo "GITHUB_TOKEN=${GH_TOKEN}"
+            echo "HERMES_PEER_SONIA_KEY=${HERMES_API_KEY}"
+            echo "HERMES_PEER_KIMYA_KEY=${HERMES_API_KEY}"
+            echo "HERMES_PEER_SEVDA_KEY=${HERMES_API_KEY}"
+            echo "HERMES_PEER_KYLIE_KEY=${HERMES_API_KEY}"
           } > ~/.hermes/.env
           chmod 600 ~/.hermes/.env
           echo '✅ Wrote ~/.hermes/.env from secrets'
@@ -282,6 +289,29 @@ jobs:
             --env "GITHUB_PERSONAL_ACCESS_TOKEN=$GH_TOKEN" \
             --connect-timeout 60 2>&1 || true
           echo '✅ GitHub MCP Server installed (26 tools: issues, PRs, code search, repos)'
+
+          #    4e. Superpowers plugin — must be INSTALLED here, not just restored.
+          #        In this repo, hermes/plugins/superpowers is only a gitlink
+          #        (mode 160000, no .gitmodules), so the restore in section 2
+          #        copies an EMPTY directory: config.yaml already lists
+          #        superpowers under plugins.enabled, but there is no
+          #        plugin.yaml / code on disk and Hermes errors on it.
+          #        Drop the empty restored dir and install from upstream.
+          #        --enable makes it non-interactive (a plain install prompts
+          #        'Enable now? [y/N]' and would hang/fail on a runner).
+          rm -rf ~/.hermes/plugins/superpowers
+          hermes plugins install obra/superpowers --enable 2>&1 | tail -5 || true
+          if [ ! -f ~/.hermes/plugins/superpowers/.hermes-plugin/plugin.yaml ]; then
+            echo '⚠️ hermes plugins install produced no plugin — falling back to git clone'
+            rm -rf ~/.hermes/plugins/superpowers
+            git clone https://github.com/obra/superpowers.git ~/.hermes/plugins/superpowers
+            hermes plugins enable superpowers 2>&1 | tail -3 || true
+          fi
+          if hermes plugins list 2>/dev/null | grep -qi superpowers; then
+            echo '✅ Superpowers plugin installed (obra/superpowers, enabled)'
+          else
+            echo '⚠️ Superpowers NOT in `hermes plugins list` — check install output above'
+          fi
 
           # 5. Write the mcp_servers block into ~/.hermes/config.yaml.
           #    Appended only if not already present.
@@ -348,11 +378,11 @@ jobs:
           nohup php artisan serve --host=0.0.0.0 > /dev/null 2>&1 &
           echo '✅ Laravel server started on port 8000'
 
-      - name: 15. Server Keep-Alive (5h 30m)
+      - name: 15. Server Keep-Alive (5h 50m)
         run: |
-          for i in {1..330}; do
+          for i in {1..350}; do
             sleep 60
-            echo "[$i/330] Server is active (SSH + Laravel on port 8000)..."
+            echo "[$i/350] Server is active (SSH + Laravel on port 8000)..."
           done
 
       - name: 16. Sync hermes state & 9router data back to my-cel
@@ -378,6 +408,26 @@ jobs:
                    gateway_state.json .skills_prompt_snapshot.json; do
             [ -f "$H/$f" ] && cp "$H/$f" "$HDEST/"
           done
+          # General guard — never sync back a plugin that is itself a git
+          # repo (anything installed via `hermes plugins install` is one,
+          # superpowers included). cp -r + `git add hermes/` would record
+          # such a dir as a gitlink (mode 160000) with no .gitmodules, and
+          # the NEXT run's checkout step dies in its 'Removing auth' phase:
+          #   fatal: No url found for submodule path
+          #   'hermes/plugins/<name>' in .gitmodules
+          # Git-repo plugins are upstream code: re-install them in step 13
+          # (like superpowers, §4e) instead of backing them up. Plain-file
+          # plugins (no .git) sync as before. Removing a git-repo plugin
+          # here also stages the deletion of any old gitlink for it in
+          # this sync commit.
+          if [ -d "$HDEST/plugins" ]; then
+            for p in "$HDEST/plugins"/*/; do
+              if [ -e "${p}.git" ]; then
+                echo "🧹 Excluding git-repo plugin from sync: $p"
+                rm -rf "$p"
+              fi
+            done
+          fi
           echo '✅ Copied hermes dynamic state → hermes/ for backup'
 
           # 2. Copy 9router database back to repo
