@@ -200,6 +200,44 @@ Standing rules:
   that runs raw SQL to compute GeoJSON is fine only if every caller eager-loads
   the underlying attribute; check loop callers before trusting it.
 
+## Request-Root, Trusted Proxies & Rate-Limit Keys
+
+Config-level security claims are settled at the framework level, not by reading
+your app code. Boot the real kernel and send a request with forged
+`X-Forwarded-*` headers; the symptoms (silent poisoning) are invisible to a
+code read.
+
+- **`trustProxies(at: '*')` trusts the entire internet.** The framework turns
+  `'*'` into `0.0.0.0/0` + `::/0`, so every `X-Forwarded-Host`/`-Proto`/`-Port`/
+  `-Prefix` from a *direct* client wins over the real `Host`. Consequences beyond
+  the obvious ones: guest redirects default to `route('login')` so a poisoned
+  root sends users to an attacker domain, `asset()` and `@vite` inherit the same
+  root, and anything persisting `$request->ip()` (audit logs, activity logs)
+  records the proxy/attacker address. Fix by defaulting to `null` (trust
+  nothing) and pinning explicit CIDRs per deployment.
+- **Excluding `X-Forwarded-For` from the header bitmask to stop spoofing also
+  breaks client IPs** — every request then resolves to the proxy's address. Once
+  proxies are pinned to CIDRs, a direct client cannot forge them, so the original
+  spoofing rationale no longer holds. Re-adding the header is the only way to get
+  a real client IP, not an optional hardening step.
+- **A named rate limiter may not key on the IP at all.** Read the `RateLimiter::for`
+  closure: `->by($request->user()->id ?? $request->ip())` keys authenticated
+  traffic on user id and only falls back to IP for guests, and the auth middleware
+  runs *before* throttle. Claims that "every authenticated endpoint shares one
+  counter behind a proxy" are then wrong — verify before repeating them.
+- **`php artisan optimize` freezes `env()` reads.** With a config cache,
+  environment loading returns before the `.env` file is read, so editing a var and
+  forgetting `config:clear` silently keeps the old value. Any plan that changes an
+  env-driven default must state the `config:clear`/`optimize` ordering.
+- **`trustHosts()` needs explicit hostnames.** With no argument it derives
+  patterns from `APP_URL`, which is usually a localhost value in committed
+  templates — an empty list then fails everything. Also note trusted-host checks
+  are disabled under `local` and `runningUnitTests()`, so a test asserting that
+  backstop needs an explicit bypass or it asserts nothing.
+- **`TrustHosts` rejects a bad host with 400, not 500**, and the framework already
+  rejects malformed host headers and takes the first comma-separated value — so
+  size severity claims to what an attacker can actually inject.
+
 ## Merge Conflicts in Auto-Generated Files
 
 When a PR has merge conflicts with `upstream/beta` in auto-generated files

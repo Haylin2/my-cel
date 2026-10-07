@@ -196,6 +196,89 @@ See `references/github-discussions.md` for the Discussion API mechanics, and the
 `laravel-livewire` skill's `references/aggregate-query-pitfalls.md` for the
 query-level verification probes.
 
+## Reviewing a Third-Party Audit Issue
+
+A sibling of the Discussions workflow above: someone else (often an
+auto-generated contributor) filed an **issue** claiming a defect, with an
+"Audited read-only at `<sha>` on branch `<x>`" footer. Your job is to verify,
+then publish your own view with reasoning as a comment — not to fix it. Your
+authority comes entirely from what you checked, so the value is in the
+corrections and the missed risks, not in agreeing.
+
+1. **Dump the body to a file and read it whole.** Titles routinely misstate
+   scope; the footer is a claim, not evidence.
+2. **Check the issue's own provenance before trusting any of it.** Does the cited
+   commit exist, and does the cited branch exist on *either* remote (your fork
+   and the canonical upstream)? A fabricated attribution means verify the rest
+   harder.
+3. **Audit against current HEAD, not the cited sha.** `git fetch` the base and
+   pin the review to a commit you name, or the line numbers you quote will be
+   the issue's stale ones.
+4. **Read the repo's authoritative instruction file first.** It pins decisions
+   (policies, env templates, install docs) that an audit issue may contradict,
+   and those contradictions are often the real finding.
+5. **Batch the mechanical checks into one labelled script** — cited `file:line`
+   pairs, "appears in no template" greps, scheduler/job inventories, dependency
+   lists. Then dispatch subagents for the deep framework-level verification and
+   re-check their highest-severity claims yourself.
+6. **Split every claim three ways: repo-verifiable code fact / environment fact
+   (usually NOT verifiable from a repo) / product decision (not the repo's
+   business).** Say which is which in the comment.
+7. **Comment structure that works:** verdict → what reproduced (with measured
+   output) → corrections with `file:line` → what the issue missed → whether it
+   is closable by a PR at all → label suggestion → what you did NOT verify.
+
+**Always suggest a label.** Read the label list before recommending one, and
+route infra-decision findings to a human-owner label rather than a ready-to-
+implement one — an issue no PR can close left unlabeled gets nobody.
+
+## Reviewing a Batch of Fresh Issues
+
+Audits arrive in bursts and the ask is "the new ones, no comment and no label".
+List, filter, then fan out — one reviewer per issue, all in a single
+`delegate_task` call, because each issue's verification is independent and each
+reviewer's context would otherwise be diluted by the others.
+
+Screen the batch mechanically before dispatching anything:
+
+```bash
+gh issue list --repo owner/repo --state open --json number,title,comments,labels,createdAt
+```
+
+Issues carrying comments or labels have already been triaged; skip them unless
+asked. Fetch each remaining body to its own file so a reviewer reads the claim
+whole and the batch survives a context loss:
+
+```bash
+gh issue view N --repo owner/repo --json body --jq .body > "$SCRATCH/issue-N.md"
+```
+
+Give each reviewer the issues file path, the pinned commit, the instruction-file
+path, and — critically — **the specific things you want disproven, not merely
+checked**. "Verify the claim" invites agreement; "prove whether this scope array
+is reachable for a user with permission P and no unit row" forces the reviewer
+to find the case that voids the finding. Tell reviewers to report in the issue's
+own language and to cite `file:line` for every number.
+
+Reviewers work in the background. Draft nothing until their reports arrive — a
+correction built on an unverified report is the failure this whole workflow
+exists to prevent. When the user waives approval for posting a batch, that
+waiver covers *posting*, never *verifying*, and it does not extend to applying
+labels unless they asked for that too.
+
+**Review the report, not just its conclusion.** Every batch this far produced
+findings that were correct in substance and wrong in at least one cited
+location or count. Re-open the cited lines yourself and re-derive the headline
+numbers before they reach a comment; a correction that is itself wrong costs
+more than silence.
+
+See `references/third-party-issue-review.md` for the claim-traps (fabricated
+branch attribution, stale compose variants, "destructive" that archives first,
+absence greps that pick up untracked env files, cited ranges that do not contain
+what they are claimed to contain, source-grep absence claims that a framework
+template fills in at render time, "runs twice" claims that a memoizing
+attribute disproves) and the split recipe.
+
 ## Writing an Execution Plan From a Debugged Bug
 
 A distinct class from an audit-driven plan: the root cause is already **verified**
