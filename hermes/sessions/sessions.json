@@ -21,6 +21,7 @@
     "suspended": false,
     "resume_pending": false,
     "resume_reason": null,
+    "yolo": false,
     "last_resume_marked_at": null,
     "active_turn_token": null,
     "active_turn_started_at": null,
@@ -51,9 +52,9 @@
   },
   "agent:main:telegram:group:-1004376120571:100651143": {
     "session_key": "agent:main:telegram:group:-1004376120571:100651143",
-    "session_id": "20261007_091723_165ddb09",
-    "created_at": "2026-10-07T09:17:23.336847",
-    "updated_at": "2026-10-07T09:17:23.336847",
+    "session_id": "20261010_160947_659b5a01",
+    "created_at": "2026-10-10T16:09:47.892634",
+    "updated_at": "2026-10-10T16:09:47.892634",
     "display_name": "گروه تیم",
     "platform": "telegram",
     "chat_type": "group",
@@ -70,6 +71,7 @@
     "suspended": false,
     "resume_pending": false,
     "resume_reason": null,
+    "yolo": false,
     "last_resume_marked_at": null,
     "active_turn_token": null,
     "active_turn_started_at": null,
@@ -87,7 +89,7 @@
       "user_name": "M A",
       "thread_id": null,
       "chat_topic": null,
-      "message_id": "2728"
+      "message_id": "2775"
     }
   }
 }
